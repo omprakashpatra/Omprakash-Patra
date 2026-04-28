@@ -1,0 +1,103 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 1. Users Collection
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn(); // In a real app, you might restrict this more
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'location', 'language'])
+      );
+
+      function isValidUser(data) {
+        return data.keys().hasAll(['uid', 'name', 'role', 'language', 'createdAt']) &&
+               data.keys().size() >= 5 &&
+               data.uid == request.auth.uid &&
+               data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+               data.role in ['farmer', 'buyer'] &&
+               data.language is string &&
+               data.createdAt == request.time;
+      }
+    }
+
+    // 2. Products Collection
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isValidProduct(incoming()) && 
+                    get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'farmer';
+      allow update: if isSignedIn() && isProductOwner() && isValidProduct(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['title', 'category', 'price', 'unit', 'quantity', 'description', 'image', 'location'])
+      );
+      allow delete: if isSignedIn() && isProductOwner();
+
+      function isProductOwner() {
+        return existing().farmerId == request.auth.uid;
+      }
+
+      function isValidProduct(data) {
+        return data.keys().hasAll(['farmerId', 'farmerName', 'title', 'price', 'unit', 'quantity', 'createdAt']) &&
+               data.farmerId == request.auth.uid &&
+               data.title is string && data.title.size() <= 200 &&
+               data.price is number && data.price >= 0 &&
+               data.quantity is number && data.quantity >= 0 &&
+               data.createdAt == (resource == null ? request.time : existing().createdAt);
+      }
+    }
+
+    // 3. Market Prices, Fertilizers, Machinery (ReadOnly for users)
+    match /marketPrices/{priceId} {
+      allow read: if true;
+    }
+    match /fertilizers/{fertilizerId} {
+      allow read: if true;
+    }
+    match /machinery/{machineId} {
+      allow read: if true;
+    }
+
+    // 4. Chats and Messages
+    match /chats/{chatId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
+      allow create: if isSignedIn() && request.auth.uid in incoming().participants;
+      allow update: if isSignedIn() && request.auth.uid in existing().participants && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['lastMessage', 'updatedAt'])
+      );
+
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        allow create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants &&
+                      incoming().chatId == chatId &&
+                      incoming().senderId == request.auth.uid &&
+                      incoming().createdAt == request.time;
+      }
+    }
+  }
+}

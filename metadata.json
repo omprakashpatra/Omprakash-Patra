@@ -1,0 +1,6 @@
+{
+  "name": "Agrom - Direct Farmer Marketplace",
+  "description": "A modern platform for farmers to sell products directly to consumers, featuring market prices, weather updates, and agricultural guides.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": []
+}

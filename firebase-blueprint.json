@@ -1,0 +1,131 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["farmer", "buyer"] },
+        "phone": { "type": "string" },
+        "location": { "type": "string" },
+        "language": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "role", "language"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Produce listed by farmers",
+      "type": "object",
+      "properties": {
+        "farmerId": { "type": "string" },
+        "farmerName": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "price": { "type": "number" },
+        "unit": { "type": "string" },
+        "quantity": { "type": "number" },
+        "description": { "type": "string" },
+        "image": { "type": "string" },
+        "location": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["farmerId", "farmerName", "title", "price", "unit", "quantity"]
+    },
+    "MarketPrice": {
+      "title": "MarketPrice",
+      "description": "Real-time or daily updated crop prices in mandis",
+      "type": "object",
+      "properties": {
+        "crop": { "type": "string" },
+        "price": { "type": "number" },
+        "location": { "type": "string" },
+        "unit": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["crop", "price", "location", "unit"]
+    },
+    "Fertilizer": {
+      "title": "Fertilizer",
+      "description": "Information about fertilizers and their usage",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "timing": { "type": "string" },
+        "description": { "type": "string" },
+        "benefits": { "type": "array", "items": { "type": "string" } },
+        "crops": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["name", "type", "description"]
+    },
+    "Machinery": {
+      "title": "Machinery",
+      "description": "Farming equipment guide",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "description": { "type": "string" },
+        "priceRange": { "type": "string" },
+        "image": { "type": "string" }
+      },
+      "required": ["name", "type", "description"]
+    },
+    "Chat": {
+      "title": "Chat",
+      "description": "Direct chat between buyer and farmer",
+      "type": "object",
+      "properties": {
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "lastMessage": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["participants"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Individual messages in a chat",
+      "type": "object",
+      "properties": {
+        "chatId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["chatId", "senderId", "text"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Public and private user profiles"
+    },
+    "products/{productId}": {
+      "schema": "Product",
+      "description": "Product listings for the marketplace"
+    },
+    "marketPrices/{priceId}": {
+      "schema": "MarketPrice",
+      "description": "Current market prices for commodities"
+    },
+    "fertilizers/{fertilizerId}": {
+      "schema": "Fertilizer",
+      "description": "Fertilizer database"
+    },
+    "machinery/{machineId}": {
+      "schema": "Machinery",
+      "description": "Machinery database"
+    },
+    "chats/{chatId}": {
+      "schema": "Chat",
+      "description": "Active conversation threads"
+    },
+    "chats/{chatId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Messages within a conversation"
+    }
+  }
+}
